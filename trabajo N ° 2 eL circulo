@@ -1,0 +1,22 @@
+float radio;
+float xc, yc;
+
+void setup(){
+  size(800,600);
+  radio = random(100,400);
+  xc=random(width);
+  yc=random (height);
+}
+void draw(){
+  if (tocarcirculo( xc, yc, radio))
+  fill(255,0,0);
+  else fill (255);
+  circle (xc, yc, radio*2);
+}
+boolean tocarcirculo (float x,float y, float r){
+  
+  float d = dist ( mouseX, mouseY, x, y);
+  if (d > r) return false;
+  else return true;
+}
+// Se dibuja un círculo en una posición aleatoria, con radio aleatorio. Si la función devuelve true, cambia el color de relleno del círculo a rojo. Si devuelve false, mantén el círculo de color blanco.
