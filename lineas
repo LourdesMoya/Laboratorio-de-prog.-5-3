@@ -1,0 +1,15 @@
+int columnas = 10;
+int cantlineas = 6;
+void setup()  {
+  size(800,500);
+float sepX = width / columnas;
+float sepY = height / cantlineas;
+for (int i = 0; i < columnas; i++) {
+ for (int j = 0; j < cantlineas; j++) {
+   float x = i * sepX;
+   float y = j * sepY;
+   line(x, 0, width/2, height/2);
+   line(x,height-0/0,sepX , height-sepY/0);
+}
+}
+}
