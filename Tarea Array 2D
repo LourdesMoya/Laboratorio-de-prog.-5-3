@@ -1,19 +1,21 @@
 int cols= 20;
 int fil= 15;
 float cW; // Ancho de cada celda
-float cW; //  alto de cada celda
+float cH; //  alto de cada celda
 
 
-float [ ] [ ] DistanciasGrillas;
+
+float [ ] [ ] DistanciaGrillas;
 
 void setup ( ){
 size ( 800, 600);
 cW= width / float ( cols );
 cH= height / float ( fil );
 
-DistanciasGrillas = new float [ cols ] [ fil ];
+DistanciaGrillas = new float [ cols ] [ fil ];
 
-noStroke( ) { // sin bordes para los rectángulos
+noStroke();// sin bordes para los rectángulos
+
 
 }
 
@@ -24,7 +26,7 @@ background (255 );
  
 ActualizarDistancias ( );
 
-DibujarGrillasConDistancias( );
+DibujarGrillasConDistancia( );
 }
 
 void ActualizarDistancias ( ) {
@@ -39,7 +41,7 @@ float centerY = y * cH + cH / 2;
 
 float DistanciaMouse = dist (centerX, centerY, mouseX, mouseY);
 
-DistanciaGrila [ x ] [ y ] = DistanciaMouse ;
+DistanciaGrillas [ x ] [ y ] = DistanciaMouse ;
 }
 }
 }
@@ -50,11 +52,11 @@ float maxDistPosible = dist (0, 0, width, height);
 for (int x = 0; x < cols; x ++) {
 for (int y = 0; y < fil; y ++) {
 
-float px = x * cW / 2;
-float py= y * cH / 2;
+float px = x * cW;
+float py= y * cH;
 
 
-float DistanciaActual = DistanciaGrila [ x ] [ y ] ;
+float DistanciaActual = DistanciaGrillas [ x ] [ y ] ;
 
 float nivelGis = map (DistanciaActual, 0, maxDistPosible, 255, 0); // map transforma un rango a otro rango de formar proporcional.
 fill (nivelGis );
@@ -62,4 +64,3 @@ rect ( px, py, cW, cH);
 }
 }
 }
- 
