@@ -1,0 +1,65 @@
+int cols = 20; 
+int fil = 15; 
+
+float cW; 
+float cH; 
+
+boolean [] [] estados; 
+
+void setup() { 
+size(800, 600); 
+
+cW = width / float(cols); 
+cH = height / float(fil); 
+
+estados = new boolean[cols][fil];
+
+for (int i = 0; i < cols; i++) { 
+for (int j = 0; j < fil; j++) { 
+estados[i][j] = false; 
+} 
+} 
+} 
+
+void draw() { 
+background(255); 
+
+for (int i = 0; i < cols; i++) { 
+for (int j = 0; j < fil; j++) { 
+  
+float px = i * cW;
+float py = j * cH; 
+
+if (!estados[i][j]) { 
+// celda apagada 
+fill(255); 
+rect(px, py, cW, CH); 
+} else { 
+// celda activada 
+
+fill(0, 0, 200); 
+rect(px, py, cW, cH); 
+dibujarestampa(px, py, cW, cH); 
+} 
+
+// borde de la celda 
+stroke(200); 
+noFill(); 
+rect(px, py, cW, cH); 
+}
+}
+}
+
+void mousePressed() { 
+  
+int colsClic = int(mouseX / cW); int filClic = int(mouseY / cH); 
+if (colsClic >= 0 && colsClic < cols && filClic >= 0 && filClic< fil) { 
+estados[colsClic][filClic] = ! estados[colsClic][filClic]; 
+} 
+} 
+void dibujarestampa(float x, float y, float w, float h) { 
+} 
+fill (255, 0, 0); 
+noStroke(); 
+ellipse(x + w/2, y + h/2, w* 0.7, h * 0.7); 
+}
