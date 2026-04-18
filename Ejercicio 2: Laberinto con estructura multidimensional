@@ -1,17 +1,20 @@
- int cols = 20; 
+int cols = 20; 
 int fil = 15; 
 float tamCelda; 
-boolean [] [][] laberinto; 
+boolean [][][] laberinto; 
 void setup() { 
 size(800, 600); 
-tamCelda = min(width / float(cols), height 
-/ float(fil)); 
+tamCelda = min(width / float(cols), height / float(fil)); 
 laberinto = new boolean[cols][fil][6]; 
 } 
 inicializarLaberintoAleatorio(); 
+
 void draw() { 
-background(255); stroke(0); strokeWeight(2); 
-for (int i = 0; i < cols; i++) { for (int j = 0; j < fil; j++) { 
+background(255); 
+stroke(0); 
+strokeWeight(2); 
+for (int i = 0; i < cols; i++) { 
+for (int j = 0; j < fil; j++) { 
 float x = i * tamCelda; 
 float y = j * tamCelda; 
 } 
@@ -65,3 +68,4 @@ if (key == 'r' || key
 inicializarLaberintoAleatorio(); 
 } 
 } 
+
