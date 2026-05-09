@@ -1,3 +1,8 @@
+int cols = 16;
+int fil = 9;
+
+boolean [][] estados;
+
 int tamanoCeldaX; 
 int tamanoCeldaY; 
 
