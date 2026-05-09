@@ -1,14 +1,10 @@
-int cols = 16; 
-int fil = 9; 
-
-boolean [][] estados; 
-
 int tamanoCeldaX; 
 int tamanoCeldaY; 
 
 void setup() { 
   
 size(800, 600); 
+//Tamaño de cada celda 
 tamanoCeldaX = width / cols; 
 tamanoCeldaY = height / fil; 
 
@@ -20,9 +16,11 @@ strokeWeight(1);
 void draw() { 
   
 background(255); 
+//Recorre toda la grilla
 for (int i = 0; i < cols; i++) { 
 for (int j = 0; j < fil; j++) {
   
+  //Pocion de cada celda
 float x = i * tamanoCeldaX; 
 float y = j * tamanoCeldaY; 
 
@@ -62,4 +60,3 @@ line(x + w/2, y + h*0.2, x + w/2, y + h*0.8); // Línea vertical
 
 noStroke(); 
 }
-
