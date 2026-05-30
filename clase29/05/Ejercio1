@@ -12,7 +12,7 @@ void setup(){
   size (800,600);
   
   robots = new movil[n];
-  for ( i=0;i<n.i++){
+  for (int i=0;i<n;i++){
     robots = new  movil (random(width), random( height));
   }
 }
@@ -20,11 +20,10 @@ void setup(){
 void draw(){
   printl(framrate);
   for(int i=0; i< n; i++){
-    robots [i].mover();
-    n filas [i]mostrar();
+    robots[i].mover();
+    robots[i].mostrar();
   }
 }
-
 
 class movil{
   Pvector Pos, Vel;
@@ -32,7 +31,7 @@ class movil{
   
   Movil (float x, float y){
     Pos= new Pvector (X, Y);
-    Vel= new Pvector (random (-2,2) random (-2,2));
+    Vel= new Pvector (random (-2,2),random (-2,2));
   }
   
   void mover (){
