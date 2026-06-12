@@ -1,0 +1,36 @@
+PVector pos, vel, Acel;
+float G = 40;
+
+void setup() {
+  size(800, 600);
+  pos = new PVector (width/2, height/2);
+  vel = new PVector (4, 3);
+};
+
+PVector G=newPVector(0,1);
+PVector Acel=newPVector(0,0);
+void mover{
+  vel.add(Acel);
+  Acel.mult(0);//newPVector(0,0)
+  Pos.add(vel);
+  contener();
+}
+void agregarfuerza(PVector F){
+  Acel.add(F);
+}
+void draw() {
+  background(#7C7C7C);
+  pos.add(vel);
+  vel.rotate(PI/300);
+//  println(Pos.x,Pos.y);
+ 
+  if(pos.y>=height || 0 >= pos.y){
+  vel.y=vel.y*(-1);
+  }
+ 
+  if(pos.x>=width || 0 >= pos.x){
+  vel.x=vel.x*(-1);
+  }
+
+  circle(pos.x,pos.y,d);
+};
