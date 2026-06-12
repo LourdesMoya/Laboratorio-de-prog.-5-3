@@ -1,0 +1,11 @@
+PVector G=newPVector(0,1);
+PVector Acel=newPVector(0,0);
+void mover{
+  vel.add(Acel);
+  Acel.mult(0);//newPVector(0,0)
+  Pos.add(vel);
+  contener();
+}
+void agregarfuerza(PVector F){
+  Acel.add(F);
+}
