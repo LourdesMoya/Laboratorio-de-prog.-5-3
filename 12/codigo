@@ -1,36 +1,59 @@
-PVector pos, vel, Acel;
-float G = 40;
+Clase Movil
 
-void setup() {
-  size(800, 600);
-  pos = new PVector (width/2, height/2);
-  vel = new PVector (4, 3);
-};
 
-PVector G=newPVector(0,1);
-PVector Acel=newPVector(0,0);
-void mover{
-  vel.add(Acel);
-  Acel.mult(0);//newPVector(0,0)
-  Pos.add(vel);
-  contener();
-}
-void agregarfuerza(PVector F){
-  Acel.add(F);
-}
-void draw() {
-  background(#7C7C7C);
-  pos.add(vel);
-  vel.rotate(PI/300);
-//  println(Pos.x,Pos.y);
+class Movil {
+  PVector acel=new PVector(0, 0);
+  PVector pos;
  
-  if(pos.y>=height || 0 >= pos.y){
-  vel.y=vel.y*(-1);
-  }
+  PVector vel = new PVector(4, 3);
+  float d=40;
+
  
-  if(pos.x>=width || 0 >= pos.x){
-  vel.x=vel.x*(-1);
+  Movil(float origenX, float origenY) {
+    pos= new PVector(origenX, origenY);
+  }
+  
+   void alejar{
+    PVector MXY=new PVector(0, 0);
+    PVector r=Pos.coPys;
+    r.sub(otro);
+    r.normalize();
+    r.mult(cuanto);
+    agregarFuerza(r);
+   }
+    void agregarFuerza(Puerto F){
+      acel.add(F);
+    }
+    
+  
+  
+  void mostrar() {
+    fill(255);
+    circle(pos.x, pos.y, d);
+
+  }
+  void contener() {
+    if (pos.x  > width || pos.x < 0) {
+      vel.x =vel.x* -1;
+   
+    }
+    if (pos.y  > height || pos.y  < 0) {
+      vel.y =vel.y* -1;
+ 
+    }
   }
 
-  circle(pos.x,pos.y,d);
-};
+  void mover() {
+    pos.add(vel);
+    vel.add(acel);
+    acel.mult(0);
+    MXY.X=mouseX;
+    MXY.Y=mouseY;
+    m.alejar
+
+    contener();
+  }
+  void agregarFuerza(PVector F) {
+    acel.add(F);
+  }
+}
