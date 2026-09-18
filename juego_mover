@@ -1,0 +1,95 @@
+// A Mover object
+Mover mover;
+
+void setup() {
+  size(640,360);
+  mover = new Mover(); 
+}
+
+void draw() {
+  background(0);
+  
+  // Update the location
+  mover.update();
+  // Display the Mover
+  mover.display(); 
+}
+class Mover {
+
+  // The Mover tracks location, velocity, and acceleration 
+  PVector location;
+  PVector velocity;
+  PVector acceleration;
+  // The Mover's maximum speed
+  float topspeed;
+  
+  Mover() {
+    // Start in the center
+    location = new PVector(width/2,height/2);
+    velocity = new PVector(0,0);
+    acceleration = new PVector(0,0);
+    topspeed = 5;
+  }
+  
+   void update() {
+//la aceleracion empieza en 0
+     acceleration = new PVector(0,0);
+
+   //movimiento con las flechas
+   if (keyPressed){
+     if (keyCode == UP){
+       acceleration.y = -0.2;
+     }
+     if (keyCode == DOWN){
+       acceleration.y = 0.2;
+     }
+     if (keyCode == LEFT){
+       acceleration.x = -0.2;
+     }
+     if (keyCode == RIGHT){
+       acceleration.x = 0.2;
+     }
+   }
+   //La velocidad cambia segun la aceleracion 
+   velocity.add(acceleration);
+
+//limita la velocidd maxima
+    velocity.limit(topspeed);
+
+//la posicion cambia segun la velocidad
+     location.add(velocity);
+     
+     //Evitar que salga de la pantalla
+      
+      if (location.x < 24){
+        location.x = 24;
+        velocity.x = 0;
+      }
+      
+       if (location.x > width - 24){
+        location.x = width - 24;
+        velocity.x = 0;
+       }
+       
+        if (location.y < 24){
+        location.y = 24;
+        velocity.y = 0;
+       
+        }
+        
+        if (location.y > height - 24){
+        location.y = height - 24;
+        velocity.y = 0;
+       }
+   }
+        
+     void display(){
+     stroke (255);
+      strokeWeight (2);
+      fill (127);
+      
+      ellipse (location.x, location.y, 48,48);
+      
+}
+}
+     
