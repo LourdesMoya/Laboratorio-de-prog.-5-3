@@ -1,1 +1,238 @@
+Mover mover;
+Bot bot;
+ArrayList<Hielo> hielos;
+ArrayList<Fuego> fuegos;
+ArrayList<Fruta> frutas;
+ArrayList<Medalla> medallas;
 
+int frutasAgarradas = 0;
+int medallasAgarradas = 0;
+boolean segundaOleada = false;
+boolean juegoTerminado = false;
+boolean juegoGanado = false;
+
+void setup() {
+  size(1000, 600);
+  mover = new Mover();
+  bot = new Bot();
+  hielos = new ArrayList<Hielo>();
+  fuegos = new ArrayList<Fuego>();
+  frutas = new ArrayList<Fruta>();
+  medallas = new ArrayList<Medalla>();
+  crearMapaHielos();
+  for (int i = 0; i < 3; i++) {
+    PVector p = posicionSegura();
+    frutas.add(new Fruta(p.x, p.y));
+  }
+  PVector p = posicionSegura();
+  medallas.add(new Medalla(p.x, p.y));
+}
+
+void draw() {
+  if (juegoTerminado) {
+    background(150, 0, 0);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(30);
+    text("¡TE ATRAPÓ!", width / 2, height / 2);
+    return;
+  }
+  if (juegoGanado) {
+    background(0, 150, 0);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(30);
+    text("¡GANASTE!", width / 2, height / 2);
+    return;
+  }
+  background(0);
+  dibujarHUD();
+  mover.update();
+  mover.display();
+  bot.update(mover.location);
+  bot.display();
+
+  for (int i = frutas.size() - 1; i >= 0; i--) {
+    Fruta f = frutas.get(i);
+    f.display();
+    if (PVector.dist(mover.location, f.location) < 30) {
+      frutas.remove(i);
+      frutasAgarradas++;
+    }
+  }
+
+  for (int i = medallas.size() - 1; i >= 0; i--) {
+    Medalla m = medallas.get(i);
+    m.display();
+    if (PVector.dist(mover.location, m.location) < 30) {
+      medallas.remove(i);
+      medallasAgarradas++;
+    }
+  }
+
+  if (!segundaOleada && frutas.size() == 0 && medallas.size() == 0 && frutasAgarradas == 3 && medallasAgarradas == 1) {
+    segundaOleada = true;
+    for (int i = 0; i < 3; i++) {
+      PVector p2 = posicionSegura();
+      frutas.add(new Fruta(p2.x, p2.y));
+    }
+    for (int i = 0; i < 2; i++) {
+      PVector p2 = posicionSegura();
+      medallas.add(new Medalla(p2.x, p2.y));
+    }
+  }
+
+  for (int i = hielos.size() - 1; i >= 0; i--) {
+    Hielo h = hielos.get(i);
+    h.update();
+    h.display();
+    if (h.derritiendo) {
+      h.tiempoFuego++;
+      if (h.tiempoFuego >= 90) {
+        hielos.remove(i);
+      }
+    }
+  }
+
+  for (int i = fuegos.size() - 1; i >= 0; i--) {
+    Fuego f = fuegos.get(i);
+    f.update();
+    f.display();
+    boolean golpeo = false;
+    for (int j = hielos.size() - 1; j >= 0; j--) {
+      Hielo h = hielos.get(j);
+      if (!h.esFijo && h.chocaCon(f.location)) {
+        h.derritiendo = true;
+        golpeo = true;
+        break;
+      }
+    }
+    if (golpeo) {
+      fuegos.remove(i);
+    } else if (f.fueraDePantalla()) {
+      fuegos.remove(i);
+    }
+  }
+
+  if (frutasAgarradas == 6 && medallasAgarradas == 3) {
+    juegoGanado = true;
+  }
+  if (bot.atrapo(mover.location)) {
+    juegoTerminado = true;
+  }
+}
+
+void crearMapaHielos() {
+  hielos.clear();
+  for (int i = 0; i < 4; i++) {
+    float x = 350;
+    float y = 100 + i * 130;
+    hielos.add(new Hielo(x, y, true));
+  }
+  for (int i = 0; i < 4; i++) {
+    float x = 650;
+    float y = 100 + i * 130;
+    hielos.add(new Hielo(x, y, true));
+  }
+}
+
+PVector posicionSegura() {
+  for (int intentos = 0; intentos < 200; intentos++) {
+    float x = random(80, width - 80);
+    float y = random(80, height - 80);
+    PVector posicion = new PVector(x, y);
+    boolean choca = false;
+    for (Hielo h : hielos) {
+      if (h.esFijo && PVector.dist(posicion, h.location) < 50) {
+        choca = true;
+        break;
+      }
+    }
+    if (!choca) {
+      return posicion;
+    }
+  }
+  return new PVector(random(80, width - 80), random(80, height - 80));
+}
+
+void dibujarHUD() {
+  fill(255);
+  textAlign(LEFT, TOP);
+  textSize(16);
+  text("Frutas: " + frutasAgarradas + "/6", 15, 15);
+  for (int i = 0; i < 3; i++) {
+    float x = width - 35 - i * 40;
+    float y = 30;
+    stroke(255, 200, 0);
+    strokeWeight(4);
+    if (i < medallasAgarradas) {
+      fill(255, 255, 0);
+    } else {
+      fill(60);
+    }
+    ellipse(x, y, 30, 30);
+  }
+}
+
+void keyPressed() {
+  if (key == ' ') {
+    crearHielosJugador();
+  }
+  if (key == 'm' || key == 'M') {
+    quitarHielosJugador();
+  }
+}
+
+void crearHielosJugador() {
+  int cantidad = 4;
+  int separacion = 50;
+  for (int i = 1; i <= cantidad; i++) {
+    float x = mover.location.x;
+    float y = mover.location.y;
+    if (mover.direccion_jugador.equals("arriba")) {
+      y -= i * separacion;
+    }
+    if (mover.direccion_jugador.equals("abajo")) {
+      y += i * separacion;
+    }
+    if (mover.direccion_jugador.equals("izquierda")) {
+      x -= i * separacion;
+    }
+    if (mover.direccion_jugador.equals("derecha")) {
+      x += i * separacion;
+    }
+    if (x >= 20 && x <= width - 20 && y >= 20 && y <= height - 20) {
+      hielos.add(new Hielo(x, y, false));
+    }
+  }
+}
+
+void quitarHielosJugador() {
+  int cantidad = 4;
+  int separacion = 50;
+  for (int i = 1; i <= cantidad; i++) {
+    float x = mover.location.x;
+    float y = mover.location.y;
+    if (mover.direccion_jugador.equals("arriba")) {
+      y -= i * separacion;
+    }
+    if (mover.direccion_jugador.equals("abajo")) {
+      y += i * separacion;
+    }
+    if (mover.direccion_jugador.equals("izquierda")) {
+      x -= i * separacion;
+    }
+    if (mover.direccion_jugador.equals("derecha")) {
+      x += i * separacion;
+    }
+    for (int j = hielos.size() - 1; j >= 0; j--) {
+      Hielo h = hielos.get(j);
+      if (h.esFijo) {
+        continue;
+      }
+      if (PVector.dist(new PVector(x, y), h.location) < 25) {
+        hielos.remove(j);
+      }
+    }
+  }
+}
