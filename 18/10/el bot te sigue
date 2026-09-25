@@ -108,7 +108,8 @@ class Mover {
        float velocidad;
        
        bot(){
-         
+
+      //el bot empieza en una esquina
          location = new
          PVector(50, 50);
          
@@ -116,11 +117,17 @@ class Mover {
        }
        
        void update(PVector objetivo) {
-         
+
+         //calcualar la direcccion hacia el jugador
          PVector direccion= PVector.sub(objetivo, location);
-         
+
+        //convierte el vector en uno de logitud 1
+         direccion.normalize();
+
+         //multiplica por la velocidad del bot
          direccion.mult(velocidad);
-         
+
+        // mueve el bot
          location.add(direccion);
        }
        
@@ -133,10 +140,12 @@ class Mover {
        }
        
        boolean atrapo(PVector objetivo) {
-         
+
+//calcular la distancia entre el bot y el jugador
          float distancia = PVector.dist(location, objetivo);
-         
-         return distancia <20;
+
+//si estan suficientemente cerca, lo atrapo
+         return distancia <40;
        }
      }
      
