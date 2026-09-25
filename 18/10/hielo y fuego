@@ -1,1 +1,196 @@
+Mover mover;
+Bot bot;
+ArrayList<Hielo> hielos;
+ArrayList<Fuego> fuegos;
 
+void setup() {
+  size(640, 360);
+  mover = new Mover();
+  bot = new Bot();
+  hielos = new ArrayList<Hielo>();
+  fuegos = new ArrayList<Fuego>();
+}
+
+void draw() {
+  background(0);
+  mover.update();
+  mover.display();
+  bot.update(mover.location);
+  bot.display();
+
+  for (int i = hielos.size() - 1; i >= 0; i--) {
+    Hielo h = hielos.get(i);
+    h.display();
+    if (h.derritiendo) {
+      h.tiempoFuego++;
+      if (h.tiempoFuego >= 90) {
+        hielos.remove(i);
+      }
+    }
+  }
+
+  for (int i = fuegos.size() - 1; i >= 0; i--) {
+    Fuego f = fuegos.get(i);
+    f.update();
+    f.display();
+    for (int j = hielos.size() - 1; j >= 0; j--) {
+      Hielo h = hielos.get(j);
+      if (h.chocaCon(f.location)) {
+        h.derritiendo = true;
+        fuegos.remove(i);
+        break;
+      }
+    }
+    if (i < fuegos.size() && fuegos.get(i).fueraDePantalla()) {
+      fuegos.remove(i);
+    }
+  }
+
+  if (bot.atrapo(mover.location)) {
+    background(150, 0, 0);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(30);
+    text("¡TE ATRAPÓ!", width/2, height/2);
+    noLoop();
+  }
+}
+
+class Mover {
+  PVector location;
+  PVector velocity;
+  PVector acceleration;
+  float topspeed;
+  String direccion_jugador;
+
+  Mover() {
+    location = new PVector(width/2, height/2);
+    velocity = new PVector(0, 0);
+    acceleration = new PVector(0, 0);
+    topspeed = 5;
+    direccion_jugador = "derecha";
+  }
+
+  void update() {
+    acceleration = new PVector(0, 0);
+    if (keyPressed) {
+      if (keyCode == UP) { acceleration.y = -0.2; direccion_jugador = "arriba"; }
+      if (keyCode == DOWN) { acceleration.y = 0.2; direccion_jugador = "abajo"; }
+      if (keyCode == LEFT) { acceleration.x = -0.2; direccion_jugador = "izquierda"; }
+      if (keyCode == RIGHT) { acceleration.x = 0.2; direccion_jugador = "derecha"; }
+    }
+    velocity.add(acceleration);
+    velocity.limit(topspeed);
+    PVector nuevaPosicion = PVector.add(location, velocity);
+
+    // ESTO ES LO QUE TE ARREGLA QUE NO TE QUEDES PEGADO
+    for (Hielo h : hielos) {
+      if (h.chocaConJugador(nuevaPosicion)) {
+        float distAhora = PVector.dist(location, h.location);
+        float distDespues = PVector.dist(nuevaPosicion, h.location);
+        if (distDespues < distAhora) {
+          velocity.mult(0);
+          return;
+        }
+      }
+    }
+
+    location = nuevaPosicion;
+    location.x = constrain(location.x, 24, width-24);
+    location.y = constrain(location.y, 24, height-24);
+  }
+
+  void display() {
+    stroke(255); strokeWeight(2); fill(127);
+    ellipse(location.x, location.y, 48, 48);
+  }
+}
+
+class Bot {
+  PVector location;
+  float velocidad;
+  Hielo hieloBloqueando;
+  Bot() { location = new PVector(50, 50); velocidad = 2; }
+  void update(PVector objetivo) {
+    hieloBloqueando = buscarHieloBloqueando(objetivo);
+    if (hieloBloqueando != null) {
+      hieloBloqueando.derritiendo = true;
+      if (frameCount % 8 == 0) {
+        fuegos.add(new Fuego(location.x, location.y, hieloBloqueando.location));
+      }
+      return;
+    }
+    PVector direccion = PVector.sub(objetivo, location);
+    if (direccion.mag() > 0) {
+      direccion.normalize(); direccion.mult(velocidad);
+      PVector nuevaPosicion = PVector.add(location, direccion);
+      boolean puedeMoverse = true;
+      for (Hielo h : hielos) { if (h.chocaConBot(nuevaPosicion)) { puedeMoverse = false; break; } }
+      if (puedeMoverse) location = nuevaPosicion;
+    }
+  }
+  Hielo buscarHieloBloqueando(PVector objetivo) {
+    for (Hielo h : hielos) {
+      if (h.derritiendo) continue;
+      if (h.bloqueaCamino(location, objetivo)) return h;
+    }
+    return null;
+  }
+  boolean atrapo(PVector objetivo) { return PVector.dist(location, objetivo) < 20; }
+  void display() { fill(255, 0, 0); stroke(255); strokeWeight(2); ellipse(location.x, location.y, 40, 40); }
+}
+
+class Hielo {
+  PVector location; float ancho; float alto; boolean derritiendo; int tiempoFuego;
+  Hielo(float x, float y, float vx, float vy) {
+    location = new PVector(x, y); ancho = 30; alto = 30; derritiendo = false; tiempoFuego = 0;
+  }
+  void display() {
+    if (derritiendo) fill(255, 180, 0); else fill(150, 220, 255);
+    stroke(255); strokeWeight(2); rectMode(CENTER);
+    rect(location.x, location.y, ancho, alto);
+  }
+  boolean chocaConJugador(PVector p) { return p.x + 24 > location.x - ancho/2 && p.x - 24 < location.x + ancho/2 && p.y + 24 > location.y - alto/2 && p.y - 24 < location.y + alto/2; }
+  boolean chocaConBot(PVector p) { return p.x + 20 > location.x - ancho/2 && p.x - 20 < location.x + ancho/2 && p.y + 20 > location.y - alto/2 && p.y - 20 < location.y + alto/2; }
+  boolean chocaCon(PVector p) { return PVector.dist(location, p) < 25; }
+  boolean bloqueaCamino(PVector inicio, PVector fin) {
+    PVector camino = PVector.sub(fin, inicio);
+    float dTotal = camino.mag();
+    if (dTotal == 0) return false;
+    camino.normalize();
+    for (float d = 0; d <= dTotal; d += 5) {
+      PVector punto = PVector.add(inicio, PVector.mult(camino, d));
+      if (punto.x > location.x - ancho/2 - 20 && punto.x < location.x + ancho/2 + 20 && punto.y > location.y - alto/2 - 20 && punto.y < location.y + alto/2 + 20) return true;
+    }
+    return false;
+  }
+}
+
+class Fuego {
+  PVector location; PVector velocity;
+  Fuego(float x, float y, PVector objetivo) {
+    location = new PVector(x, y);
+    velocity = PVector.sub(objetivo, location);
+    if (velocity.mag() > 0) { velocity.normalize(); velocity.mult(5); }
+  }
+  void update() { location.add(velocity); }
+  void display() { fill(255, 120, 0); stroke(255, 0, 0); strokeWeight(2); ellipse(location.x, location.y, 15, 15); }
+  boolean fueraDePantalla() { return location.x < 0 || location.x > width || location.y < 0 || location.y > height; }
+}
+
+void keyPressed() {
+  if (key == ' ') {
+    int cantidad = 4;
+    int separacion = 50; // ESTO ARREGLA QUE NO NAZCA DENTRO TUYO
+    for (int i = 1; i <= cantidad; i++) {
+      float x = mover.location.x;
+      float y = mover.location.y;
+      if (mover.direccion_jugador.equals("arriba")) y -= i * separacion;
+      if (mover.direccion_jugador.equals("abajo")) y += i * separacion;
+      if (mover.direccion_jugador.equals("izquierda")) x -= i * separacion;
+      if (mover.direccion_jugador.equals("derecha")) x += i * separacion;
+      if (x < 15 || x > width-15 || y < 15 || y > height-15) continue;
+      hielos.add(new Hielo(x, y, 0, 0));
+    }
+  }
+}
