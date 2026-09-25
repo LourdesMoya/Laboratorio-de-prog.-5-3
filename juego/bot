@@ -1,1 +1,182 @@
+class Bot {
 
+  PVector location;
+
+  float velocidad;
+
+  Hielo hieloBloqueando;
+
+  boolean disparando;
+
+
+  Bot() {
+
+    location = new PVector(50, 50);
+
+    velocidad = 2.2;
+
+    hieloBloqueando = null;
+
+    disparando = false;
+  }
+
+
+  void update(PVector objetivo) {
+
+    hieloBloqueando =
+      buscarHieloBloqueando(objetivo);
+
+
+    // HAY UN HIELO EN EL CAMINO
+    if (hieloBloqueando != null) {
+
+      disparando = true;
+
+
+      // Dispara fuego continuamente
+      if (frameCount % 10 == 0) {
+
+        fuegos.add(
+          new Fuego(
+          location.x,
+          location.y,
+          hieloBloqueando.location
+          )
+          );
+      }
+
+      // El bot NO avanza
+      return;
+    }
+
+
+    // NO HAY HIELO
+    disparando = false;
+
+
+    // Ir hacia el jugador
+    PVector direccion =
+      PVector.sub(
+      objetivo,
+      location
+      );
+
+
+    if (direccion.mag() > 0) {
+
+      direccion.normalize();
+
+      direccion.mult(velocidad);
+
+
+      PVector nuevaPosicion =
+        PVector.add(
+        location,
+        direccion
+        );
+
+
+      boolean puedeMoverse = true;
+
+
+      // Comprobar hielo
+      for (Hielo h : hielos) {
+
+        if (h.chocaConBot(nuevaPosicion)) {
+
+          puedeMoverse = false;
+
+          break;
+        }
+      }
+
+
+      if (puedeMoverse) {
+
+        location = nuevaPosicion;
+      }
+    }
+  }
+
+
+  Hielo buscarHieloBloqueando(PVector objetivo) {
+
+    for (Hielo h : hielos) {
+
+      // Los hielos fijos son paredes del mapa
+      // y no se derriten.
+      if (h.esFijo) {
+        continue;
+      }
+
+
+      // Si ya está derritiéndose,
+      // el bot sigue disparándole.
+      if (h.derritiendo) {
+
+        return h;
+      }
+
+
+      if (h.bloqueaCamino(
+        location,
+        objetivo
+        )) {
+
+        return h;
+      }
+    }
+
+
+    return null;
+  }
+
+
+  boolean atrapo(PVector objetivo) {
+
+    return PVector.dist(
+      location,
+      objetivo
+      ) < 20;
+  }
+
+
+  void display() {
+
+    // Línea que muestra hacia dónde dispara
+    if (disparando &&
+        hieloBloqueando != null) {
+
+      stroke(255, 120, 0, 180);
+      strokeWeight(3);
+
+      line(
+        location.x,
+        location.y,
+        hieloBloqueando.location.x,
+        hieloBloqueando.location.y
+        );
+    }
+
+
+    if (disparando) {
+
+      fill(255, 150, 0);
+
+    } else {
+
+      fill(255, 0, 0);
+    }
+
+
+    stroke(255);
+    strokeWeight(2);
+
+    ellipse(
+      location.x,
+      location.y,
+      40,
+      40
+      );
+  }
+}
