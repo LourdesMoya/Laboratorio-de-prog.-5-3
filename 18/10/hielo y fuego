@@ -4,6 +4,11 @@ Bot bot;
 ArrayList<Hielo> hielos;
 ArrayList<Fuego> fuegos;
 
+
+// ==========================================
+// SETUP
+// ==========================================
+
 void setup() {
   size(640, 360);
 
@@ -14,64 +19,108 @@ void setup() {
   fuegos = new ArrayList<Fuego>();
 }
 
+
+// ==========================================
+// DRAW
+// ==========================================
+
 void draw() {
+
   background(0);
 
+  // ------------------------------
   // JUGADOR
+  // ------------------------------
+
   mover.update();
   mover.display();
 
+
+  // ------------------------------
   // BOT
+  // ------------------------------
+
   bot.update(mover.location);
   bot.display();
 
-  // Actualizar hielos
+
+  // ------------------------------
+  // HIELOS
+  // ------------------------------
+
   for (int i = hielos.size() - 1; i >= 0; i--) {
+
     Hielo h = hielos.get(i);
 
-    h.update();
     h.display();
 
-    // Si el fuego toca el hielo, se destruyen
-    for (int j = fuegos.size() - 1; j >= 0; j--) {
-      Fuego f = fuegos.get(j);
+    // Si el hielo está siendo derretido
+    if (h.derritiendo) {
 
-      if (h.chocaCon(f.location)) {
+      h.tiempoFuego++;
+
+      // Después de aproximadamente 1,5 segundos
+      if (h.tiempoFuego >= 90) {
+
         hielos.remove(i);
-        fuegos.remove(j);
-        break;
+        continue;
       }
     }
   }
 
-  // Actualizar fuego
+
+  // ------------------------------
+  // FUEGOS
+  // ------------------------------
+
   for (int i = fuegos.size() - 1; i >= 0; i--) {
+
     Fuego f = fuegos.get(i);
 
     f.update();
     f.display();
 
-    // Si el fuego sale de la pantalla
-    if (f.fueraDePantalla()) {
+    // Si el fuego toca un hielo
+    for (int j = hielos.size() - 1; j >= 0; j--) {
+
+      Hielo h = hielos.get(j);
+
+      if (h.chocaCon(f.location)) {
+
+        h.derritiendo = true;
+
+        fuegos.remove(i);
+        break;
+      }
+    }
+
+    // Si salió de la pantalla
+    if (i < fuegos.size() && fuegos.get(i).fueraDePantalla()) {
       fuegos.remove(i);
     }
   }
 
-  // Comprobar si el bot atrapó al jugador
+
+  // ------------------------------
+  // ATRAPAR AL JUGADOR
+  // ------------------------------
+
   if (bot.atrapo(mover.location)) {
+
     background(150, 0, 0);
 
     fill(255);
     textAlign(CENTER, CENTER);
     textSize(30);
+
     text("¡TE ATRAPÓ!", width/2, height/2);
   }
 }
 
 
-// ==========================================
+// ==========================================================
 // JUGADOR
-// ==========================================
+// ==========================================================
 
 class Mover {
 
@@ -81,69 +130,134 @@ class Mover {
 
   float topspeed;
 
+  // Dirección que está mirando el jugador
+  String direccion_jugador;
+
+
   Mover() {
+
     location = new PVector(width/2, height/2);
+
     velocity = new PVector(0, 0);
     acceleration = new PVector(0, 0);
 
     topspeed = 5;
+
+    // Dirección inicial
+    direccion_jugador = "derecha";
   }
+
 
   void update() {
 
     acceleration = new PVector(0, 0);
 
-    // Movimiento con las flechas
+
+    // --------------------------------
+    // MOVIMIENTO
+    // --------------------------------
+
     if (keyPressed) {
 
       if (keyCode == UP) {
+
         acceleration.y = -0.2;
+
+        direccion_jugador = "arriba";
       }
+
 
       if (keyCode == DOWN) {
+
         acceleration.y = 0.2;
+
+        direccion_jugador = "abajo";
       }
+
 
       if (keyCode == LEFT) {
+
         acceleration.x = -0.2;
+
+        direccion_jugador = "izquierda";
       }
 
+
       if (keyCode == RIGHT) {
+
         acceleration.x = 0.2;
+
+        direccion_jugador = "derecha";
       }
     }
 
+
     velocity.add(acceleration);
+
     velocity.limit(topspeed);
 
-    location.add(velocity);
+    PVector nuevaPosicion = PVector.add(location, velocity);
 
-    // Evitar salir de la pantalla
+
+    // --------------------------------
+    // COLISIÓN CON HIELO
+    // --------------------------------
+
+    boolean puedeMoverse = true;
+
+    for (Hielo h : hielos) {
+
+      if (h.chocaConJugador(nuevaPosicion)) {
+
+        puedeMoverse = false;
+        velocity.mult(0);
+
+        break;
+      }
+    }
+
+
+    if (puedeMoverse) {
+
+      location = nuevaPosicion;
+    }
+
+
+    // --------------------------------
+    // LÍMITES DE LA PANTALLA
+    // --------------------------------
+
     if (location.x < 24) {
+
       location.x = 24;
       velocity.x = 0;
     }
 
     if (location.x > width - 24) {
+
       location.x = width - 24;
       velocity.x = 0;
     }
 
     if (location.y < 24) {
+
       location.y = 24;
       velocity.y = 0;
     }
 
     if (location.y > height - 24) {
+
       location.y = height - 24;
       velocity.y = 0;
     }
   }
 
+
   void display() {
 
     stroke(255);
     strokeWeight(2);
+
     fill(127);
 
     ellipse(location.x, location.y, 48, 48);
@@ -151,16 +265,19 @@ class Mover {
 }
 
 
-// ==========================================
+// ==========================================================
 // BOT
-// ==========================================
+// ==========================================================
 
 class Bot {
 
   PVector location;
+
   float velocidad;
 
-  int contadorFuego;
+  // Hielo que está bloqueando al bot
+  Hielo hieloBloqueando;
+
 
   Bot() {
 
@@ -168,157 +285,442 @@ class Bot {
 
     velocidad = 2;
 
-    contadorFuego = 0;
+    hieloBloqueando = null;
   }
+
 
   void update(PVector objetivo) {
 
-    // Buscar al jugador
-    PVector direccion = PVector.sub(objetivo, location);
+    // Primero buscamos si hay un hielo bloqueando
+    hieloBloqueando = buscarHieloBloqueando(objetivo);
+
+
+    // ======================================================
+    // SI HAY HIELO BLOQUEANDO
+    // ======================================================
+
+    if (hieloBloqueando != null) {
+
+      // El bot SE DETIENE
+      // No atraviesa el hielo
+
+      hieloBloqueando.derritiendo = true;
+
+
+      // El bot tira fuego continuamente
+      // hacia el hielo
+
+      if (frameCount % 8 == 0) {
+
+        fuegos.add(
+          new Fuego(
+            location.x,
+            location.y,
+            hieloBloqueando.location
+          )
+        );
+      }
+
+      return;
+    }
+
+
+    // ======================================================
+    // SI NO HAY HIELO
+    // ======================================================
+
+    // El bot persigue normalmente al jugador
+
+    PVector direccion =
+      PVector.sub(objetivo, location);
 
     if (direccion.mag() > 0) {
+
       direccion.normalize();
+
       direccion.mult(velocidad);
 
-      location.add(direccion);
-    }
+      PVector nuevaPosicion =
+        PVector.add(location, direccion);
 
-    // Disparar fuego cada cierto tiempo
-    contadorFuego++;
 
-    if (contadorFuego > 60) {
+      // --------------------------------
+      // COLISIÓN CON HIELOS
+      // --------------------------------
 
-      fuegos.add(new Fuego(location.x, location.y, objetivo));
+      boolean puedeMoverse = true;
 
-      contadorFuego = 0;
+      for (Hielo h : hielos) {
+
+        if (h.chocaConBot(nuevaPosicion)) {
+
+          puedeMoverse = false;
+
+          break;
+        }
+      }
+
+
+      if (puedeMoverse) {
+
+        location = nuevaPosicion;
+      }
     }
   }
+
+
+  // ======================================================
+  // BUSCAR HIELO QUE BLOQUEA EL CAMINO
+  // ======================================================
+
+  Hielo buscarHieloBloqueando(PVector objetivo) {
+
+    for (Hielo h : hielos) {
+
+      // Si ya está siendo derretido
+      // no lo consideramos otro obstáculo
+      if (h.derritiendo) {
+        continue;
+      }
+
+
+      // Distancia del hielo a la línea
+      // entre el bot y el jugador
+
+      if (h.bloqueaCamino(location, objetivo)) {
+
+        return h;
+      }
+    }
+
+
+    return null;
+  }
+
+
+  // ======================================================
+  // ATRAPAR
+  // ======================================================
+
+  boolean atrapo(PVector objetivo) {
+
+    float distancia =
+      PVector.dist(location, objetivo);
+
+    return distancia < 20;
+  }
+
+
+  // ======================================================
+  // DIBUJAR BOT
+  // ======================================================
 
   void display() {
 
     fill(255, 0, 0);
+
     stroke(255);
     strokeWeight(2);
 
     ellipse(location.x, location.y, 40, 40);
   }
-
-  boolean atrapo(PVector objetivo) {
-
-    float distancia = PVector.dist(location, objetivo);
-
-    return distancia < 20;
-  }
 }
 
 
-// ==========================================
+// ==========================================================
 // HIELO
-// ==========================================
+// ==========================================================
 
 class Hielo {
 
   PVector location;
-  float velocidad;
 
-  Hielo(float x, float y, float direccionX, float direccionY) {
+  float ancho;
+  float alto;
+
+  boolean derritiendo;
+
+  int tiempoFuego;
+
+
+  Hielo(float x, float y, float vx, float vy) {
 
     location = new PVector(x, y);
 
-    PVector direccion = new PVector(direccionX, direccionY);
+    ancho = 30;
+    alto = 30;
 
-    direccion.normalize();
-    direccion.mult(6);
+    derritiendo = false;
 
-    velocidad = 6;
+    tiempoFuego = 0;
   }
 
-  void update() {
 
-    // El hielo se mueve hacia adelante
-    // La velocidad se guarda en el vector
-    location.x += velocidad;
-  }
+  // ======================================================
+  // DIBUJAR
+  // ======================================================
 
   void display() {
 
-    fill(150, 220, 255);
+    if (derritiendo) {
+
+      // Cambia de color mientras se derrite
+      fill(255, 180, 0);
+
+    } else {
+
+      // Hielo normal
+      fill(150, 220, 255);
+    }
+
+
     stroke(255);
     strokeWeight(2);
 
     rectMode(CENTER);
-    rect(location.x, location.y, 25, 25);
+
+    rect(
+      location.x,
+      location.y,
+      ancho,
+      alto
+    );
   }
 
-  boolean chocaCon(PVector otra) {
 
-    float distancia = PVector.dist(location, otra);
+  // ======================================================
+  // COLISIÓN CON JUGADOR
+  // ======================================================
+
+  boolean chocaConJugador(PVector posicion) {
+
+    return
+      posicion.x + 24 > location.x - ancho/2 &&
+      posicion.x - 24 < location.x + ancho/2 &&
+      posicion.y + 24 > location.y - alto/2 &&
+      posicion.y - 24 < location.y + alto/2;
+  }
+
+
+  // ======================================================
+  // COLISIÓN CON BOT
+  // ======================================================
+
+  boolean chocaConBot(PVector posicion) {
+
+    return
+      posicion.x + 20 > location.x - ancho/2 &&
+      posicion.x - 20 < location.x + ancho/2 &&
+      posicion.y + 20 > location.y - alto/2 &&
+      posicion.y - 20 < location.y + alto/2;
+  }
+
+
+  // ======================================================
+  // COLISIÓN CON FUEGO
+  // ======================================================
+
+  boolean chocaCon(PVector posicion) {
+
+    float distancia =
+      PVector.dist(location, posicion);
 
     return distancia < 25;
+  }
+
+
+  // ======================================================
+  // SABER SI BLOQUEA EL CAMINO
+  // ======================================================
+
+  boolean bloqueaCamino(
+    PVector inicio,
+    PVector finalPos
+    ) {
+
+
+    // Vector que va desde el bot
+    // hasta el jugador
+
+    PVector camino =
+      PVector.sub(finalPos, inicio);
+
+
+    float distanciaTotal =
+      camino.mag();
+
+
+    if (distanciaTotal == 0) {
+      return false;
+    }
+
+
+    camino.normalize();
+
+
+    // Revisamos diferentes puntos
+    // del camino entre bot y jugador
+
+    for (float distancia = 0;
+         distancia <= distanciaTotal;
+         distancia += 5) {
+
+
+      PVector punto =
+        PVector.add(
+          inicio,
+          PVector.mult(camino, distancia)
+        );
+
+
+      // Si el punto está dentro del hielo
+      if (
+        punto.x > location.x - ancho/2 - 20 &&
+        punto.x < location.x + ancho/2 + 20 &&
+        punto.y > location.y - alto/2 - 20 &&
+        punto.y < location.y + alto/2 + 20
+        ) {
+
+        return true;
+      }
+    }
+
+
+    return false;
   }
 }
 
 
-// ==========================================
+// ==========================================================
 // FUEGO
-// ==========================================
+// ==========================================================
 
 class Fuego {
 
   PVector location;
   PVector velocity;
 
-  Fuego(float x, float y, PVector objetivo) {
 
-    location = new PVector(x, y);
+  Fuego(
+    float x,
+    float y,
+    PVector objetivo
+    ) {
 
-    velocity = PVector.sub(objetivo, location);
 
-    velocity.normalize();
-    velocity.mult(5);
+    location =
+      new PVector(x, y);
+
+
+    velocity =
+      PVector.sub(
+        objetivo,
+        location
+      );
+
+
+    if (velocity.mag() > 0) {
+
+      velocity.normalize();
+
+      velocity.mult(5);
+    }
   }
+
 
   void update() {
 
     location.add(velocity);
   }
 
+
   void display() {
 
     fill(255, 120, 0);
+
     stroke(255, 0, 0);
+
     strokeWeight(2);
 
-    ellipse(location.x, location.y, 15, 15);
+    ellipse(
+      location.x,
+      location.y,
+      15,
+      15
+    );
   }
+
 
   boolean fueraDePantalla() {
 
-    return location.x < 0 ||
-           location.x > width ||
-           location.y < 0 ||
-           location.y > height;
+    return
+      location.x < 0 ||
+      location.x > width ||
+      location.y < 0 ||
+      location.y > height;
   }
 }
 
 
-// ==========================================
+// ==========================================================
 // DISPARAR HIELO
-// ==========================================
+// ==========================================================
 
 void keyPressed() {
 
   if (key == ' ') {
 
-    // Crear hielo desde la posición del jugador
-    // Por ahora sale hacia la derecha
-    hielos.add(
+
+    float vx = 0;
+    float vy = 0;
+
+
+    // ==============================================
+    // DIRECCIÓN SEGÚN HACIA DÓNDE MIRA EL JUGADOR
+    // ==============================================
+
+    if (mover.direccion_jugador.equals("arriba")) {
+
+      vx = 0;
+      vy = -6;
+    }
+
+
+    if (mover.direccion_jugador.equals("abajo")) {
+
+      vx = 0;
+      vy = 6;
+    }
+
+
+    if (mover.direccion_jugador.equals("izquierda")) {
+
+      vx = -6;
+      vy = 0;
+    }
+
+
+    if (mover.direccion_jugador.equals("derecha")) {
+
+      vx = 6;
+      vy = 0;
+    }
+
+
+    // ==============================================
+    // CREAR EL HIELO
+    // ==============================================
+
+    Hielo nuevoHielo =
       new Hielo(
         mover.location.x,
         mover.location.y,
-        1,
-        0
-      )
-    );
+        vx,
+        vy
+      );
+
+
+    hielos.add(nuevoHielo);
   }
 }
+    
